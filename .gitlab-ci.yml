@@ -1,0 +1,59 @@
+# Hidden job that defines an anchor named 'job_definition'
+.job_template: &job_definition
+  image: dockerproxy-iva.si.francetelecom.fr/cirrusci/flutter:1.0.0
+  tags:
+    - rsc
+    - shared
+    - docker
+  only:
+    - master
+  before_script:
+    - export http_proxy=http://devwatt-proxy.si.fr.intraorange:8080
+    - export https_proxy=http://devwatt-proxy.si.fr.intraorange:8080
+    - export no_proxy=127.0.0.1
+    - export NO_PROXY=127.0.0.1
+    # List CI/CD variables
+    - env | grep ^CI_
+    
+stages:
+  - unit_test
+  - widget_test
+  - build
+  #- build_ios
+  #- deploy
+
+build_job:
+  <<: *job_definition
+  stage: build
+  script:
+    # Build the app
+    - flutter build apk --release
+  artifacts:
+    name: "$CI_COMMIT_REF_NAME"
+    paths:
+      - build/
+    expire_in: 1 week
+    
+#build_ios_job:
+  #<<: *job_definition
+  #stage: build_ios
+  #script:
+    # Build the app
+    #- flutter build ios --release --no-codesign
+  #artifacts:
+    #name: "$CI_COMMIT_REF_NAME"
+    #paths:
+      #- build/
+    #expire_in: 1 week
+    
+unit_test_job:
+  <<: *job_definition
+  stage: unit_test
+  script:
+    - flutter test test/fetch_post_test.dart
+
+widget_test_job:
+  <<: *job_definition
+  stage: widget_test
+  script:
+    - flutter test test/affichage_card_test.dart
